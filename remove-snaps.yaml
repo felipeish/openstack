@@ -5,7 +5,7 @@
 
   tasks:
     - name: Executar script e registrar saída
-      shell: /usr/local/bin/listsnapshot.sh
+      shell: sh /usr/local/bin/listsnapshot.sh
       register: script_output
 
     - name: Exibir saída do script no log do AWX
