@@ -1,14 +1,14 @@
 - hosts: all
   become: true
   tasks:
-    - shell: /usr/local/bin/listsnapshot.sh > /usr/local/bin/listsnapshot.txt 2>&1
+    - shell: /usr/local/bin/listsnapshot.sh > /usr/local/bin/listsnapshot_output.txt 2>&1
       args:
         executable: /bin/bash
       register: script_execution
       changed_when: false
 
     - name: Ler o conteúdo do arquivo de saída
-      shell: cat /usr/local/bin/listsnapshot.txt
+      shell: cat /usr/local/bin/listsnapshot_output.txt
       register: file_output
       changed_when: false
 
@@ -18,5 +18,5 @@
     - fail:
         msg: >
           O script falhou com código de saída {{ script_execution.rc }}.
-          Verifique o arquivo /usr/local/bin/listsnapshot.txt para detalhes.
+          Verifique o arquivo /usr/local/bin/listsnapshot_output.txt para detalhes.
       when: script_execution.rc != 0
