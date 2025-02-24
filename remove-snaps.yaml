@@ -10,16 +10,13 @@
       register: script_output
       changed_when: false 
 
-    - name: Exibir STDOUT do script
-      debug:
+      -debug:
         var: script_output.stdout
 
-    - name: Exibir STDERR do script
-      debug:
+      -debug:
         var: script_output.stderr
 
-    - name: Falhar se o script retornou erro
-      fail:
+      -fail:
         msg: >
           O script falhou com código de saída {{ script_output.rc }}.
           STDERR: {{ script_output.stderr }}
