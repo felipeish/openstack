@@ -4,8 +4,8 @@
 
   tasks:
     - name: Executar script
-      shell: sh /usr/local/bin/listsnapshot.sh
-       args:
+      shell: /usr/local/bin/listsnapshot.sh
+      args:
         executable: /bin/bash
       register: script_output
       changed_when: false 
