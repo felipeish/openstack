@@ -1,13 +1,24 @@
----
-- name: Create Ansible folder
+- name: Remove Snaps
   hosts: all
   become: true
 
   tasks:
-    - name: Executar script e registrar saída
+    - name: Executar script
       shell: sh /usr/local/bin/listsnapshot.sh
       register: script_output
+      changed_when: false 
 
-    - name: Exibir saída do script no log do AWX
+    - name: Exibir STDOUT do script
       debug:
         var: script_output.stdout
+
+    - name: Exibir STDERR do script
+      debug:
+        var: script_output.stderr
+
+    - name: Falhar se o script retornou erro
+      fail:
+        msg: >
+          O script falhou com código de saída {{ script_output.rc }}.
+          STDERR: {{ script_output.stderr }}
+      when: script_output.rc != 0
