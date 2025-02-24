@@ -2,21 +2,80 @@
 - name: Atualizar sistema operacional conforme a distribuição
   hosts: all
   become: yes
+  vars:
+    debian_tags: "Debian/Ubuntu"
+    redhat_tags: "RHEL/CentOS/Fedora"
+    windows_tags: "Windows"
+    reboot_required: false
+
   tasks:
-    - name: Atualizar sistemas baseados em Debian (Debian/Ubuntu)
+    # Debian/Ubuntu: Verificação e atualização
+    - name: Verificar distribuição Debian/Ubuntu
+      debug:
+        msg: "Distribuição identificada: {{ ansible_distribution }}. Iniciando atualização para Debian/Ubuntu."
+      when: ansible_os_family == "Debian"
+      tags: debian
+
+    - name: Atualizar sistemas baseados em Debian (apt update e upgrade dist)
       apt:
         update_cache: yes
         upgrade: dist
       when: ansible_os_family == "Debian"
+      tags: debian
+      register: apt_update_result
 
-    - name: Atualizar sistemas baseados em RedHat (RHEL/CentOS/Fedora)
+    - name: Notificar falha na atualização via apt (Debian/Ubuntu)
+      debug:
+        msg: "Falha ao atualizar o sistema via apt."
+      when: apt_update_result is failed
+      tags: debian
+
+    # RedHat/CentOS/Fedora: Verificação e atualização
+    - name: Verificar distribuição RedHat/CentOS/Fedora
+      debug:
+        msg: "Distribuição identificada: {{ ansible_distribution }}. Iniciando atualização para RedHat/CentOS/Fedora."
+      when: ansible_os_family == "RedHat"
+      tags: redhat
+
+    - name: Atualizar sistemas baseados em RedHat (yum update)
       yum:
         name: "*"
         state: latest
       when: ansible_os_family == "RedHat"
+      tags: redhat
+      register: yum_update_result
+
+    - name: Notificar falha na atualização via yum (RedHat/CentOS/Fedora)
+      debug:
+        msg: "Falha ao atualizar o sistema via yum."
+      when: yum_update_result is failed
+      tags: redhat
+
+    # Windows: Verificação e atualização
+    - name: Verificar sistema Windows
+      debug:
+        msg: "Sistema Windows identificado. Iniciando processo de atualização."
+      when: ansible_os_family == "Windows"
+      tags: windows
 
     - name: Atualizar sistema operacional Windows
       win_updates:
         category_names: ['Critical Updates', 'Security Updates']
-        reboot: yes
+        reboot: no  # O reinício será controlado pelo handler
       when: ansible_os_family == "Windows"
+      tags: windows
+      register: win_update_result
+
+    - name: Definir flag para reinicialização no Windows, se necessário
+      set_fact:
+        reboot_required: "{{ win_update_result.reboot_required | default(false) }}"
+      when: ansible_os_family == "Windows"
+      tags: windows
+
+  handlers:
+    - name: Reiniciar o sistema se necessário (Windows)
+      reboot:
+        msg: "Reiniciando o sistema após atualizações críticas."
+        pre_reboot_delay: 10
+      when: reboot_required
+      listen: "Reboot Handler"
