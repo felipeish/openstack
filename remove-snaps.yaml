@@ -1,20 +1,20 @@
 - hosts: all
   become: true
   tasks:
-    - script: /usr/local/bin/listsnapshot.sh
+    - shell: /usr/local/bin/listsnapshot.sh
       args:
         executable: /bin/bash
-      register: script_output
+      register: result
       changed_when: false 
 
     - debug:
-        var: script_output.stdout
+        var: result.stdout
 
     - debug:
-        var: script_output.stderr
+        var: result.stderr
 
     - fail:
         msg: >
-          O script falhou com código de saída {{ script_output.rc }}.
-          STDERR: {{ script_output.stderr }}
-      when: script_output.rc != 0
+          O script falhou com código de saída {{ result.rc }}.
+          STDERR: {{ result.stderr }}
+      when: result.rc != 0
