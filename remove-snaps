@@ -1,0 +1,13 @@
+---
+- name: Create Ansible folder
+  hosts: all
+  become: true
+
+  tasks:
+    - name: Executar script e registrar saída
+      shell: /usr/local/bin/listsnapshot.sh
+      register: script_output
+
+    - name: Exibir saída do script no log do AWX
+      debug:
+        var: script_output.stdout
