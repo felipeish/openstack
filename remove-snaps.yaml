@@ -4,17 +4,17 @@
     - shell: /usr/local/bin/listsnapshot.sh
       args:
         executable: /bin/bash
-      register: result
-      changed_when: false 
+      register: script_output
+      changed_when: false
 
     - debug:
-        var: result.stdout
+        msg: "{{ script_output.stdout_lines }}"
 
     - debug:
-        var: result.stderr
+        msg: "{{ script_output.stderr_lines }}"
 
     - fail:
         msg: >
-          O script falhou com código de saída {{ result.rc }}.
-          STDERR: {{ result.stderr }}
-      when: result.rc != 0
+          O script falhou com código de saída {{ script_output.rc }}.
+          STDERR: {{ script_output.stderr }}
+      when: script_output.rc != 0
