@@ -1,6 +1,6 @@
 ---
 - name: Baixar e montar a última ISO do VirtIO‑Win
-  hosts: all
+  hosts: windows
   gather_facts: yes
   vars:
     base_url: "https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/archive-virtio"
@@ -11,6 +11,7 @@
         url: "{{ base_url }}/"
         return_content: yes
       register: virtio_page
+      delegate_to: localhost  # Executa essa tarefa no nó de controle
 
     - name: Extrair subdiretórios com versões
       set_fact:
@@ -34,7 +35,7 @@
       
     - name: Construir URL completa da ISO
       set_fact:
-        iso_url: "{{ base_url }}/{{ latest_dir }}/{{ iso_base }}.iso }}"
+        iso_url: "{{ base_url }}/{{ latest_dir }}/{{ iso_base }}.iso"
       
     - name: Exibir URL da ISO
       debug:
