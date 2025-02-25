@@ -4,6 +4,10 @@
   gather_facts: yes
   vars:
     base_url: "https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/archive-virtio"
+  vars_prompt:
+    - name: selected_version
+      prompt: "Informe a versão desejada (ex: virtio-win-0.1.266-1)"
+      private: no
 
   tasks:
     - name: Obter a página do diretório "archive-virtio"
@@ -21,14 +25,12 @@
       debug:
         msg: "Versões disponíveis: {{ version_dirs | join(', ') }}"
 
-    - name: Pausar e solicitar a versão desejada
-      pause:
-        prompt: "Informe a versão desejada (exemplo: virtio-win-0.1.266-1): "
-      register: user_input
-
-    - name: Definir a versão selecionada
-      set_fact:
-        selected_version: "{{ user_input.user_input | trim }}"
+    - name: Validar versão selecionada
+      assert:
+        that:
+          - selected_version in version_dirs
+        fail_msg: "A versão informada não está disponível. Verifique as versões disponíveis."
+      delegate_to: localhost
 
     - name: Obter a página do diretório da versão selecionada
       uri:
