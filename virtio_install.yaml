@@ -1,6 +1,6 @@
 ---
-- name: Baixar e montar a última ISO do VirtIO‑Win
-  hosts: all
+- name: Baixar e instalar o MSI x64 do VirtIO Win
+  hosts: windows
   gather_facts: yes
   vars:
     base_url: "https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/archive-virtio"
@@ -17,40 +17,54 @@
       set_fact:
         version_dirs: "{{ virtio_page.content | regex_findall('href=\"(virtio-win-[^\"]+/)\"') }}"
 
-    - name: Exibir subdiretórios encontrados
+    - name: Exibir versões disponíveis
       debug:
-        var: version_dirs
+        msg: "Versões disponíveis: {{ version_dirs | join(', ') }}"
 
-    - name: Selecionar o último diretório (mais recente) - ordenação alfabética
+    - name: Pausar e solicitar a versão desejada
+      pause:
+        prompt: "Informe a versão desejada (exemplo: virtio-win-0.1.266-1): "
+      register: user_input
+
+    - name: Definir a versão selecionada
       set_fact:
-        latest_dir: "{{ (version_dirs | sort)[-1] | regex_replace('/$', '') }}"
+        selected_version: "{{ user_input.user_input | trim }}"
 
-    - name: Exibir o diretório selecionado
+    - name: Obter a página do diretório da versão selecionada
+      uri:
+        url: "{{ base_url }}/{{ selected_version }}/"
+        return_content: yes
+      register: version_page
+      delegate_to: localhost
+
+    - name: Extrair links dos arquivos MSI x64 da página
+      set_fact:
+        msi_links: "{{ version_page.content | regex_findall('href=\"([^\"]*x64[^\"]*\\.msi)\"') }}"
+
+    - name: Exibir MSI encontrados
       debug:
-        msg: "Diretório da última versão: {{ latest_dir }}"
+        msg: "Arquivos MSI encontrados: {{ msi_links | join(', ') }}"
 
-    - name: Extrair o nome base da ISO 
+    - name: Selecionar o MSI x64 desejado (primeiro da lista)
       set_fact:
-        iso_base: "{{ latest_dir | regex_replace('^(virtio-win-[0-9.]+)-.*$', '\\1') }}"
+        selected_msi: "{{ msi_links[0] }}"
+      when: msi_links | length > 0
 
-    - name: Construir URL completa da ISO
+    - name: Construir URL completa do MSI
       set_fact:
-        iso_url: "{{ base_url }}/{{ latest_dir }}/{{ iso_base }}.iso"
+        msi_url: "{{ base_url }}/{{ selected_version }}/{{ selected_msi }}"
 
-    - name: Exibir URL da ISO
+    - name: Exibir URL do MSI
       debug:
-        msg: "ISO a ser baixada: {{ iso_url }}"
+        msg: "MSI a ser baixado: {{ msi_url }}"
 
-    - name: Baixar a ISO do VirtIO‑Win para a pasta Downloads do usuário
+    - name: Baixar o MSI do VirtIO Win x64 para a pasta Downloads do usuário
       win_get_url:
-        url: "{{ iso_url }}"
-        dest: "{{ ansible_env.USERPROFILE }}\\Downloads\\{{ iso_base }}.iso"
+        url: "{{ msi_url }}"
+        dest: "{{ ansible_env.USERPROFILE }}\\Downloads\\{{ selected_msi }}"
       register: download_result
 
-    - name: Montar a imagem ISO
-      win_shell: "Mount-DiskImage -ImagePath '{{ ansible_env.USERPROFILE }}\\Downloads\\{{ iso_base }}.iso'"
-      register: mount_result
-
-    - name: Exibir resultado da montagem
-      debug:
-        var: mount_result
+    - name: Instalar o pacote MSI do VirtIO Win
+      win_package:
+        path: "{{ ansible_env.USERPROFILE }}\\Downloads\\{{ selected_msi }}"
+        arguments: "/qn"
