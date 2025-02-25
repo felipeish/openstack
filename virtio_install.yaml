@@ -4,13 +4,9 @@
   gather_facts: yes
   vars:
     base_url: "https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/archive-virtio"
-  vars_prompt:
-    - name: selected_version
-      prompt: "Informe a versão desejada (ex: virtio-win-0.1.266-1)"
-      private: no
 
   tasks:
-    - name: Obter a página do diretório "archive-virtio"
+    - name: Delegar a consulta do diretório base para localhost
       uri:
         url: "{{ base_url }}/"
         return_content: yes
@@ -21,15 +17,11 @@
       set_fact:
         version_dirs: "{{ virtio_page.content | regex_findall('href=\"(virtio-win-[^\"]+/)\"') }}"
 
-    - name: Exibir versões disponíveis
-      debug:
-        msg: "Versões disponíveis: {{ version_dirs | join(', ') }}"
-
-    - name: Validar versão selecionada
+    - name: Validar se a versão informada na Survey existe
       assert:
         that:
           - selected_version in version_dirs
-        fail_msg: "A versão informada não está disponível. Verifique as versões disponíveis."
+        fail_msg: "A versão informada ({{ selected_version }}) não está disponível. Verifique as versões disponíveis: {{ version_dirs }}"
       delegate_to: localhost
 
     - name: Obter a página do diretório da versão selecionada
@@ -43,11 +35,7 @@
       set_fact:
         msi_links: "{{ version_page.content | regex_findall('href=\"([^\"]*x64[^\"]*\\.msi)\"') }}"
 
-    - name: Exibir MSI encontrados
-      debug:
-        msg: "Arquivos MSI encontrados: {{ msi_links | join(', ') }}"
-
-    - name: Selecionar o MSI x64 desejado (primeiro da lista)
+    - name: Selecionar o primeiro MSI x64 encontrado
       set_fact:
         selected_msi: "{{ msi_links[0] }}"
       when: msi_links | length > 0
@@ -55,10 +43,6 @@
     - name: Construir URL completa do MSI
       set_fact:
         msi_url: "{{ base_url }}/{{ selected_version }}/{{ selected_msi }}"
-
-    - name: Exibir URL do MSI
-      debug:
-        msg: "MSI a ser baixado: {{ msi_url }}"
 
     - name: Baixar o MSI do VirtIO Win x64 para a pasta Downloads do usuário
       win_get_url:
