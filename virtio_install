@@ -1,0 +1,55 @@
+---
+- name: Baixar e montar a última ISO do VirtIO‑Win
+  hosts: windows
+  gather_facts: yes
+  vars:
+    base_url: "https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/archive-virtio"
+
+  tasks:
+    - name: Obter a página do diretório "archive-virtio"
+      uri:
+        url: "{{ base_url }}/"
+        return_content: yes
+      register: virtio_page
+
+    - name: Extrair subdiretórios com versões (ex: virtio-win-0.1.266-1/)
+      set_fact:
+        version_dirs: "{{ virtio_page.content | regex_findall('href=\"(virtio-win-[^\"]+/)\"') }}"
+      
+    - name: Exibir subdiretórios encontrados
+      debug:
+        var: version_dirs
+
+    - name: Selecionar o último diretório (mais recente) - ordenação alfabética
+      set_fact:
+        latest_dir: "{{ (version_dirs | sort)[-1] | regex_replace('/$', '') }}"
+      
+    - name: Exibir o diretório selecionado
+      debug:
+        msg: "Diretório da última versão: {{ latest_dir }}"
+
+    - name: Extrair o nome base da ISO (ex: virtio-win-0.1.266)
+      set_fact:
+        iso_base: "{{ latest_dir | regex_replace('^(virtio-win-[0-9.]+)-.*$', '\\1') }}"
+      
+    - name: Construir URL completa da ISO
+      set_fact:
+        iso_url: "{{ base_url }}/{{ latest_dir }}/{{ iso_base }}.iso }}"
+      
+    - name: Exibir URL da ISO
+      debug:
+        msg: "ISO a ser baixada: {{ iso_url }}"
+
+    - name: Baixar a ISO do VirtIO‑Win
+      win_get_url:
+        url: "{{ iso_url }}"
+        dest: "C:\\Temp\\{{ iso_base }}.iso"
+      register: download_result
+
+    - name: Montar a imagem ISO
+      win_shell: "Mount-DiskImage -ImagePath 'C:\\Temp\\{{ iso_base }}.iso'"
+      register: mount_result
+
+    - name: Exibir resultado da montagem
+      debug:
+        var: mount_result
