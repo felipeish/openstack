@@ -1,6 +1,6 @@
 ---
 - name: Baixar e montar a última ISO do VirtIO‑Win
-  hosts: windows
+  hosts: all
   gather_facts: yes
   vars:
     base_url: "https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/archive-virtio"
