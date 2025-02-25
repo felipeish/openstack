@@ -50,7 +50,9 @@
         dest: "{{ ansible_env.USERPROFILE }}\\Downloads\\{{ selected_msi }}"
       register: download_result
 
-    - name: Instalar o pacote MSI do VirtIO Win
+    - name: Instalar o pacote MSI do VirtIO Win de forma assíncrona
       win_package:
         path: "{{ ansible_env.USERPROFILE }}\\Downloads\\{{ selected_msi }}"
         arguments: "/qn"
+      async: 1
+      poll: 0
