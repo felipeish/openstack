@@ -38,6 +38,16 @@
           debug:
             msg: "Sistema Windows identificado. Iniciando atualização..."
 
+        - name: Reiniciar serviço Windows Update (wuauserv)
+          win_service:
+            name: wuauserv
+            state: restarted
+
+        - name: Reiniciar serviço BITS (opcional, mas recomendado)
+          win_service:
+            name: bits
+            state: restarted
+
         - name: Atualizar sistema operacional Windows
           win_updates:
             category_names: ['Critical Updates', 'Security Updates']
